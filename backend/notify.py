@@ -3,7 +3,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 try:
     from dotenv import load_dotenv
@@ -11,7 +11,9 @@ try:
     _repo = Path(__file__).resolve().parent.parent
     load_dotenv(_repo / '.env')
 except ImportError:
-    pass
+    _repo = Path(__file__).resolve().parent.parent
+
+from email_recipients_store import load_recipients
 
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
@@ -31,11 +33,23 @@ def _sender_password() -> str:
     )
 
 
-def _recipient_email() -> str:
-    return (
+def _recipients_from_env() -> List[str]:
+    raw = (
         os.environ.get('RECIPIENT_EMAIL', '').strip()
         or os.environ.get('STAFF_EMAIL', '').strip()
     )
+    if not raw:
+        return []
+    parts = raw.replace(';', ',').split(',')
+    return [p.strip() for p in parts if p.strip()]
+
+
+def get_recipient_emails() -> List[str]:
+    """Active recipient list: saved JSON override if set, else comma-separated .env."""
+    saved = load_recipients(_repo)
+    if saved:
+        return saved
+    return _recipients_from_env()
 
 
 def mask_email(addr: str) -> str:
@@ -48,25 +62,33 @@ def mask_email(addr: str) -> str:
 
 
 def alert_recipient_preview() -> Optional[str]:
-    """Masked recipient when configured (for UI / health without sending)."""
-    r = _recipient_email()
-    return mask_email(r) if r else None
+    """Masked summary for health/UI (comma-separated if multiple)."""
+    addrs = get_recipient_emails()
+    if not addrs:
+        return None
+    masked = [mask_email(a) for a in addrs]
+    return ', '.join(masked)
+
+
+def alert_recipients_masked_list() -> List[str]:
+    return [mask_email(a) for a in get_recipient_emails()]
 
 
 def send_wastage_alert(room_id: str, devices_on: list, power_w, confidence: float) -> dict:
     sender = _sender_email()
     password = _sender_password()
-    staff = _recipient_email()
+    recipients = get_recipient_emails()
 
-    if not (sender and password and staff):
+    if not (sender and password and recipients):
         msg = (
-            'Set ALERT_EMAIL, ALERT_PASSWORD, and RECIPIENT_EMAIL '
-            '(or legacy SMTP_USER, SMTP_PASS, STAFF_EMAIL) in .env'
+            'Set ALERT_EMAIL, ALERT_PASSWORD, and at least one recipient '
+            '(Settings page or RECIPIENT_EMAIL / STAFF_EMAIL in .env)'
         )
         print(f'[notify] Skipped: {msg}')
         return {
             'sent': False,
-            'recipient_masked': mask_email(staff) if staff else None,
+            'recipient_masked': None,
+            'recipients_masked': [],
             'error': 'not_configured',
             'message': msg,
         }
@@ -89,18 +111,20 @@ def send_wastage_alert(room_id: str, devices_on: list, power_w, confidence: floa
     )
     msg = MIMEMultipart()
     msg['From'] = sender
-    msg['To'] = staff
+    msg['To'] = ', '.join(recipients)
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
+    masked = [mask_email(a) for a in recipients]
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(sender, password)
-            server.sendmail(sender, staff, msg.as_string())
-        print(f'[notify] Alert sent → {mask_email(staff)} for {room_id}')
+            server.sendmail(sender, recipients, msg.as_string())
+        print(f'[notify] Alert sent -> {", ".join(masked)} for {room_id}')
         return {
             'sent': True,
-            'recipient_masked': mask_email(staff),
+            'recipient_masked': ', '.join(masked),
+            'recipients_masked': masked,
             'error': None,
             'message': None,
         }
@@ -108,7 +132,8 @@ def send_wastage_alert(room_id: str, devices_on: list, power_w, confidence: floa
         print(f'[notify] Email failed: {e}')
         return {
             'sent': False,
-            'recipient_masked': mask_email(staff),
+            'recipient_masked': ', '.join(masked),
+            'recipients_masked': masked,
             'error': 'send_failed',
             'message': str(e),
         }

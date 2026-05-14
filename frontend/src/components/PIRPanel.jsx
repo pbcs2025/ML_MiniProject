@@ -1,5 +1,33 @@
-export default function PIRPanel({ occupancy, onChange, compact }) {
+export default function PIRPanel({ occupancy, onChange, compact, light }) {
   const occupied = occupancy === 1;
+  if (light) {
+    return (
+      <button
+        type="button"
+        onClick={() => onChange(occupied ? 0 : 1)}
+        className={`relative flex flex-col items-center justify-center rounded-full border-2 shadow-sm transition-colors ${
+          compact ? 'h-[4.5rem] w-[4.5rem]' : 'h-24 w-24'
+        } ${occupied ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white'}`}
+      >
+        {occupied && (
+          <>
+            <span
+              className="absolute inset-2 rounded-full border border-sky-300/80"
+              style={{ animation: 'radar-ring 2s ease-out infinite' }}
+            />
+            <span
+              className="absolute inset-2 rounded-full border border-sky-200/60"
+              style={{ animation: 'radar-ring 2s ease-out infinite 0.6s' }}
+            />
+          </>
+        )}
+        <span className={`text-[9px] font-semibold tracking-wider ${occupied ? 'text-sky-700' : 'text-slate-500'}`}>
+          {occupied ? 'MOTION' : 'NO MOTION'}
+        </span>
+        <span className="mt-0.5 text-[8px] text-slate-400">tap</span>
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -27,7 +55,7 @@ export default function PIRPanel({ occupancy, onChange, compact }) {
       >
         {occupied ? 'MOTION' : 'NO MOTION'}
       </span>
-      <span className="text-[8px] text-gray-500 mt-0.5">tap</span>
+      <span className="mt-0.5 text-[8px] text-gray-500">tap</span>
     </button>
   );
 }

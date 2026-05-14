@@ -4,9 +4,14 @@
 
 body {
   margin: 0;
-  background: #0f1117;
-  color: #e6edf3;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.dark body {
+  background: #020617;
+  color: #f1f5f9;
 }
 
 @keyframes spin-fan {
@@ -18,52 +23,32 @@ body {
   }
 }
 
+.fan-blades {
+  transform-origin: 0 0;
+  animation: spin-fan 1.2s linear infinite;
+}
+
 @keyframes pulse-border {
   0%,
   100% {
-    box-shadow: 0 0 0 1px #ff3d3d;
+    box-shadow: 0 0 0 2px #dc2626;
   }
   50% {
-    box-shadow: 0 0 12px 2px #ff3d3d88;
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.22);
   }
+}
+
+.wastage-card {
+  animation: pulse-border 1.8s ease-in-out infinite;
 }
 
 @keyframes radar-ring {
   0% {
     transform: scale(0.6);
-    opacity: 0.8;
+    opacity: 0.75;
   }
   100% {
-    transform: scale(1.4);
+    transform: scale(1.35);
     opacity: 0;
-  }
-}
-
-@keyframes flicker {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.65;
-  }
-}
-
-@keyframes type-caret {
-  50% {
-    border-color: transparent;
-  }
-}
-
-.device-pulse {
-  animation: device-pulse 0.45s ease-out;
-}
-
-@keyframes device-pulse {
-  0% {
-    filter: drop-shadow(0 0 0 #00e5ff);
-  }
-  100% {
-    filter: drop-shadow(0 0 12px #00e5ff00);
   }
 }

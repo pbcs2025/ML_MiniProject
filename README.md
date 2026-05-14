@@ -36,7 +36,12 @@ cd backend
 python app.py
 ```
 
-API: `http://localhost:5000` — `GET /health`, `GET /rooms`, `POST /predict`, `GET /analytics/summary`.
+API: `http://localhost:5000` — `GET /health`, `GET /rooms`, `POST /predict`, `GET /analytics/summary`, `GET /history?limit=…`, `GET /analytics/cumulative`, `GET/PUT /settings/recipients`. Prediction history uses MongoDB when available, otherwise SQLite at `data/predictions.db`.
+
+### Alert recipients (multiple addresses)
+
+- **Settings page** in the app (`/settings`): save one or more recipient emails without editing `.env`. Stored in `data/email_recipients.json` (gitignored). **Use .env only** removes that file and restores `RECIPIENT_EMAIL` / `STAFF_EMAIL`.
+- **Or** set `RECIPIENT_EMAIL=a@x.com,b@y.com` (comma-separated) in `.env`. Sender credentials remain `ALERT_EMAIL` / `ALERT_PASSWORD`.
 
 ### Email alerts (Gmail App Password)
 

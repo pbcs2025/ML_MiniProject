@@ -1,17 +1,28 @@
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from predict import build_prediction
-from notify import alert_recipient_preview, send_wastage_alert
+from email_recipients_store import load_recipients, normalize_and_validate, save_recipients
+from notify import alert_recipient_preview, alert_recipients_masked_list, get_recipient_emails, send_wastage_alert
+from prediction_store import (
+    get_cumulative_stats,
+    get_history,
+    init_prediction_store,
+    save_prediction,
+    store_backend,
+)
 
 app = Flask(__name__)
 CORS(app)
 
 ROOMS = ['Class1', 'Class2', 'Class3', 'Lab1', 'Lab2', 'StaffRoom']
 _REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_REPO_PATH = Path(_REPO)
+init_prediction_store(_REPO_PATH)
 
 
 @app.route('/rooms', methods=['GET'])
@@ -23,6 +34,11 @@ def get_rooms():
 def predict():
     data = request.get_json(silent=True) or {}
     result = build_prediction(data)
+
+    try:
+        save_prediction(result, data)
+    except Exception as exc:
+        print(f'[prediction_store] save failed: {exc}')
 
     if result['wastage_predicted'] == 1:
         mail = send_wastage_alert(
@@ -42,7 +58,66 @@ def health():
         'status': 'ok',
         'alert_recipient_configured': bool(alert_recipient_preview()),
         'alert_recipient_masked': alert_recipient_preview(),
+        'alert_recipients_masked': alert_recipients_masked_list(),
+        'recipient_source': 'settings_file' if load_recipients(_REPO_PATH) else 'env',
+        'prediction_store': store_backend(),
     })
+
+
+@app.route('/settings/recipients', methods=['GET'])
+def settings_recipients_get():
+    saved = load_recipients(_REPO_PATH)
+    return jsonify({
+        'recipients': get_recipient_emails(),
+        'recipients_masked': alert_recipients_masked_list(),
+        'source': 'settings_file' if saved else 'env',
+    })
+
+
+@app.route('/settings/recipients', methods=['PUT'])
+def settings_recipients_put():
+    data = request.get_json(silent=True) or {}
+    raw = data.get('recipients')
+    if raw is None:
+        return jsonify({
+            'error': 'missing_recipients',
+            'message': 'Send JSON: {"recipients": ["a@x.com", "b@y.com"]} or [] to use .env',
+        }), 400
+    if isinstance(raw, str):
+        parts = []
+        for line in raw.splitlines():
+            for p in line.replace(';', ',').split(','):
+                p = p.strip()
+                if p:
+                    parts.append(p)
+        raw = parts
+    if not isinstance(raw, list):
+        return jsonify({'error': 'invalid_type', 'message': 'recipients must be a list or string'}), 400
+    cleaned, err = normalize_and_validate([str(x) for x in raw])
+    if err:
+        return jsonify({'error': 'validation', 'message': err}), 400
+    save_recipients(_REPO_PATH, cleaned)
+    src = 'settings_file' if load_recipients(_REPO_PATH) else 'env'
+    return jsonify({
+        'ok': True,
+        'recipients': get_recipient_emails(),
+        'recipients_masked': alert_recipients_masked_list(),
+        'source': src,
+    })
+
+
+@app.route('/history', methods=['GET'])
+def history():
+    try:
+        lim = int(request.args.get('limit', 500))
+    except (TypeError, ValueError):
+        lim = 500
+    return jsonify(get_history(lim))
+
+
+@app.route('/analytics/cumulative', methods=['GET'])
+def analytics_cumulative():
+    return jsonify(get_cumulative_stats())
 
 
 @app.route('/analytics/summary', methods=['GET'])
