@@ -107,12 +107,34 @@ export default function DevicePanel({
               <rect x="50" y="50" width="56" height="18" rx="6" fill={light ? '#fefce8' : '#e2e8f0'} stroke={light ? '#ca8a04' : '#94a3b8'} strokeWidth="2" />
               <rect x="58" y="54" width="40" height="4" rx="1" fill={light ? '#fde047' : '#cbd5e1'} />
               <rect x="58" y="60" width="40" height="4" rx="1" fill={light ? '#fde047' : '#cbd5e1'} />
+              <text
+                x="78"
+                y="76"
+                textAnchor="middle"
+                fill="#64748b"
+                fontSize="7"
+                fontFamily="Inter, sans-serif"
+                pointerEvents="none"
+              >
+                Ceiling light
+              </text>
             </g>
             <g onClick={() => onToggle('light')} className="cursor-pointer" role="presentation">
               {light && <ellipse cx="342" cy="58" rx="34" ry="16" fill={`url(#${gid}-bulbGlow)`} opacity="0.85" />}
               <rect x="314" y="50" width="56" height="18" rx="6" fill={light ? '#fefce8' : '#e2e8f0'} stroke={light ? '#ca8a04' : '#94a3b8'} strokeWidth="2" />
               <rect x="322" y="54" width="40" height="4" rx="1" fill={light ? '#fde047' : '#cbd5e1'} />
               <rect x="322" y="60" width="40" height="4" rx="1" fill={light ? '#fde047' : '#cbd5e1'} />
+              <text
+                x="342"
+                y="76"
+                textAnchor="middle"
+                fill="#64748b"
+                fontSize="7"
+                fontFamily="Inter, sans-serif"
+                pointerEvents="none"
+              >
+                Ceiling light
+              </text>
             </g>
 
             {/* Ceiling projector — horizontally centered, slightly above room midpoint (210,124) → body ~y99–129 */}
@@ -142,7 +164,7 @@ export default function DevicePanel({
               <circle cx="230" cy="114" r="10" fill={!staff && projector ? '#0f172a' : '#475569'} stroke="#334155" strokeWidth="1" />
               <rect x="182" y="104" width="28" height="3" rx="1" fill="#94a3b8" opacity="0.85" />
               <rect x="182" y="110" width="18" height="2" rx="1" fill="#94a3b8" opacity="0.65" />
-              <text x="210" y="142" textAnchor="middle" fill="#64748b" fontSize="7" fontFamily="Inter, sans-serif">
+              <text x="210" y="142" textAnchor="middle" fill="#64748b" fontSize="7" fontFamily="Inter, sans-serif" pointerEvents="none">
                 Projector
               </text>
             </g>
@@ -150,6 +172,12 @@ export default function DevicePanel({
             {/* Twin ceiling fans — directly below projector row */}
             {renderFan(158, 180)}
             {renderFan(262, 180)}
+            <text x="158" y="218" textAnchor="middle" fill="#64748b" fontSize="7" fontFamily="Inter, sans-serif" pointerEvents="none">
+              Ceiling fan
+            </text>
+            <text x="262" y="218" textAnchor="middle" fill="#64748b" fontSize="7" fontFamily="Inter, sans-serif" pointerEvents="none">
+              Ceiling fan
+            </text>
 
             <g onClick={() => onToggle('ac')} className="cursor-pointer" role="presentation">
               {ac && <rect x="354" y="132" width="28" height="72" rx="8" fill="#bae6fd" opacity="0.45" />}
@@ -167,7 +195,7 @@ export default function DevicePanel({
                 <line key={y} x1="362" y1={y} x2="374" y2={y} stroke={ac ? '#64748b' : '#94a3b8'} strokeWidth="1.8" strokeLinecap="round" />
               ))}
               <circle cx="370" cy="144" r="3.5" fill={ac ? '#22c55e' : '#cbd5e1'} />
-              <text x="368" y="214" textAnchor="middle" fill="#475569" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="700">
+              <text x="368" y="214" textAnchor="middle" fill="#475569" fontSize="10" fontFamily="Inter, sans-serif" fontWeight="700" pointerEvents="none">
                 AC
               </text>
             </g>
